@@ -16,27 +16,28 @@ MAXZERO: machine epsilon 0.001
 '''
 
 bestSolution = np.zeros([0,0,0])
-def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances, maxzero: float):
+result1, result2 = np.array([0,0,0]), np.array([0,0,0])
+def trilateration(anchorPos, distances, maxzero: float):
     #Three spheres, and need to consider concentric spheres
-    global  bestSolution
-
+    global bestSolution
+    global result1, result2
     p1, p2, p3, p4 = np.array(anchorPos[0]), np.array(anchorPos[1]), np.array(anchorPos[2]), np.array(anchorPos[3])
     r1, r2, r3, r4 = distances[0], distances[1], distances[2], distances[3]
 
     ex = p3 - p1
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
 
     if h <= maxzero:
         return -1 # ERR_TRIL_CONCENTRIC
 
     ex = p3 - p2
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
     if h <= maxzero:
         return -1
 
     ####################################################################
     ex = p2 - p1
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
     if h <= maxzero:
         return -1
 
@@ -44,15 +45,16 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
 
     t1 = p3 - p1
     i = np.dot(ex, t1)
-    t2 = t1*i
+    t2 = ex*i
     ey = t1 - t2
-    t = np.norm(ey)
+    t = np.linalg.norm(ey)
     if t > maxzero:
         ey /= t
         j = np.dot(ey, t1)
     else:
         j = 0.0
 
+    # print("j:", j)
     if abs(j) <= maxzero:   #p3 is on the line of p1p2
         '''
         In the case that three centres are on one line, there is only one possible solution
@@ -60,26 +62,22 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
         for the sphere 3 to get the circle intersected from sphere 1 and sphere 2.
         '''
         t2 = p1 + ex*r1
-        if abs(np.norm(p2 - t2) - r2) <= maxzero and abs(np.norm(p3 - t2) - r3) <= maxzero:
+        if abs(np.linalg.norm(p2 - t2) - r2) <= maxzero and abs(np.linalg.norm(p3 - t2) - r3) <= maxzero:
             '''
             Three centres are in one line, and p2 - t2 = r2*ex, t2 - p1 = r1*ex, mean the tangent
             point of two circles are on the line. t2 is the only solution.
             '''
-            if result1:
-                result1 = t2
-            if result2:
-                result2 = t2
+            result1 = t2
+            result2 = t2
             return 3  # TRIL_3SPHERES
 
         '''
-        Consider the other direction of the line.
+        Consider the other direction of the line if t2 above doesn't satisfy.
         '''
         t2 = p1 + ex * (-r1)
-        if abs(np.norm(p2 - t2) - r2) <= maxzero and abs(np.norm(p3 - t2) - r3) <= maxzero:
-            if result1:
-                result1 = t2
-            if result2:
-                result2 = t2
+        if abs(np.linalg.norm(p2 - t2) - r2) <= maxzero and abs(np.linalg.norm(p3 - t2) - r3) <= maxzero:
+            result1 = t2
+            result2 = t2
             return 3 # TRIL_3SPHERES
 
         return -2 # ERR_TRIL_COLINEAR_2SOLUTIONS
@@ -98,11 +96,10 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
     t2 = p1 + ex*x
     t2 = t2 + ey*y
 
-    if result1:
-        result1 = t2 + ez*z
-    if result2:
-        result2 = t2 - ez*z
+    result1 = t2 + ez*z
+    result2 = t2 - ez*z
 
+    print(result1, result2)
     '''
     Two points from the first three spheres.
     '''
@@ -113,24 +110,24 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
     '''
 
     ex = p4 - p1
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
     if h <= maxzero:
         return 3  # TRIL_3SPHERES
 
     ex = p4 - p2
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
     if h <= maxzero:
         return 3  # TRIL_3SPHERES
 
     ex = p4 - p3
-    h = np.norm(ex)
+    h = np.linalg.norm(ex)
     if h <= maxzero:
         return 3  # TRIL_3SPHERES
 
     t3 = result1 - p4
-    i = np.norm(t3)
+    i = np.linalg.norm(t3)
     t3 = result2 - p4
-    h = np.norm(t3)
+    h = np.linalg.norm(t3)
 
     if i > h:
         bestSolution = result1
@@ -185,7 +182,7 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
                 mu = mu2
 
             ex = result2 - result1
-            h = np.norm(ex)
+            h = np.linalg.norm(ex)
             ex = ex / h
             mu = 0.5*mu
             t2 = ex*mu*h
@@ -197,7 +194,7 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
             else:
                 mu = mu2
             ex = result2 - result1
-            h = np.norm(ex)
+            h = np.linalg.norm(ex)
             ex = ex / h
             t2 = ex * mu*h
             t2 = t2 + result1
@@ -215,7 +212,7 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
             else:
                 mu -= 0.5*(1-mu)
             ex = result2 - result1
-            h = np.norm(ex)
+            h = np.linalg.norm(ex)
             ex /= h
             t2 = ex*mu*h
             t2 = result1 + t2
@@ -232,7 +229,7 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
             else:
                 mu -= 0.5*(1-mu)
             ex = result2 - result1
-            h = np.norm(ex)
+            h = np.linalg.norm(ex)
             t2 = ex*mu*h
             t2 = result1 + t2
             bestSolution = t2
@@ -243,7 +240,7 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
             '''
             mu = mu1 + mu2
             ex = result2 - result1
-            h = np.norm(ex)
+            h = np.linalg.norm(ex)
             ex /= h
             mu = 0.5*mu
             t2 = ex * mu*h
@@ -252,3 +249,11 @@ def trilateration(result1: np.ndarray, result2: np.ndarray, anchorPos, distances
 
     return 4 # TRIL_4SPHERES
 
+
+
+anchorPos = [[0,0,0], [3,0,0],[2,0,0],[0,0,0]]
+distances = [1,2,1,1]
+maxzero = 0.001
+result = trilateration(anchorPos, distances, maxzero)
+print(result)
+print("result1, result2:", result1, result2)

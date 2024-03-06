@@ -44,6 +44,7 @@ class generalLocation:
 
             method = twoDimensionalLocation(anchorPos, distances)
             result = method.deca3DLocate()
+            self.bestSolution = method.bestSolution
 
             if result >= 0:
                 if method.result1[2] <= method.result2[2]:

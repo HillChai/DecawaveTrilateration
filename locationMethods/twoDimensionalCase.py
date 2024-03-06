@@ -134,7 +134,7 @@ class twoDimensionalLocation:
         self.result1 = t2 + ez * z
         self.result2 = t2 - ez * z
 
-        print(self.result1, self.result2)
+        # print(self.result1, self.result2)
         '''
         Two points from the first three spheres.
         '''
@@ -177,7 +177,7 @@ class twoDimensionalLocation:
         result = 1
 
         while result and cnt4 < 10:
-            print(1)
+            # print(1)
             result = self.sphereline(self.p4, rr4)
             rr4 += 0.1
             cnt4 += 1

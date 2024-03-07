@@ -42,7 +42,7 @@ distances = target.getDistancesFromBLEmessage()
 dllResults = []
 
 for i in range(len(distances)):
-    result = pDll.Getlocation(byref(location), anchorArray, distanceArray)
+    result = pDll.GetLocation(byref(location), anchorArray, distanceArray)
     dllResults.append([location.x, location.y, location.z])
 print("dllResults: ", len(dllResults))
 

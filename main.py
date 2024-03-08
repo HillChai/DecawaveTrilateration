@@ -13,7 +13,7 @@ class UWBMsg(Structure):
                 ("y", c_double),
                 ("z", c_double)]
 
-def trilateration(anchorPos, distances):
+def trilaterationInDll(anchorPos, distances):
 # def trilateration():
 
     location = UWBMsg()
@@ -49,18 +49,31 @@ anchorPos = [[0,0,0], [0.95,0,0], [0, 1.87, 0], [0.95, 1.87, 0]]
 target = processor(path=path, jsonName="6-16-40-10", anchorPos=anchorPos)
 target.getBLEmessage()
 distances = target.getDistancesFromBLEmessage()
+'''
+单点比较打印
+'''
+# i = 40 + 150
+# x,y,z = trilaterationInDll(anchorPos, [int(distances[i][j] * 1000) for j in range(4)])
+# print("dll:", x, y, z)
+# x,y,z = target.calculateOneByDecawave(distances[i], 2)
+# print("mine:", x,y,z)
 
+'''
+整体比较图
+'''
 dllPositions = []
-for i in range(target.n):
-    x,y,z = trilateration(anchorPos, [int(distances[i][j] * 1000) for j in range(4)])
+for i in range(len(distances)):
+    x,y,z = trilaterationInDll(anchorPos, [int(distances[i][j] * 1000) for j in range(4)])
     dllPositions.append([x,y,z])
+uwbResults = target.calculateByDecawave(distances,2)
+target.Position2DTogether(dllPositions, uwbResults, "Red Dll and Blue mine")
 
-print(dllPositions)
-target.Position2D(dllPositions, "dllPositions")
+# target.Position2D(dllPositions, "dllPositions")
+# target.Position2D(uwbResults, "uwbResults")
 
-uwbResults = target.calculateByDecawave(distances)
-target.Position2D(uwbResults, "uwbResults")
-# target.Position3D(uwbResults, "UWB", xlimInterval = [-1,1], ylimInterval=[1,2], zlimInterval=[-3,0])
+
+
+# target.Position3D(dllPositions, "UWB", xlimInterval = [-1,1], ylimInterval=[1,2], zlimInterval=[-3,0])
 # backDistances = target.backCheckUWBResults(uwbResults)
 # target.draw4DistanceComparingGraphs(distances=distances, unknowDistances=backDistances)
 # target.draw4DistanceDifferenceGraphs(distances, backDistances)

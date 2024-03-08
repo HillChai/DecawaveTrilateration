@@ -58,14 +58,22 @@ class processor:
                 for i in range(8):
                     value += int(s[7 - i], 16) * (16 ** i)
                 d.append(value / 1000)
+                # d.append(value)
             distances.append(d)
         return distances
 
-    def calculateByDecawave(self, distances) -> list:
+    def calculateOneByDecawave(self, distances, dimensional) -> list:
+        method = generalLocation()
+        result = method.GetLocation(anchorPos=self.anchorPos, distances=distances,dimensional=dimensional)
+        return method.bestSolution
+
+
+
+    def calculateByDecawave(self, distances, dimensional) -> list:
         method = generalLocation()
         uwbResults = []
         for i in range(self.n):
-            result = method.GetLocation(anchorPos=self.anchorPos, distances=distances[i],dimensional=2)
+            result = method.GetLocation(anchorPos=self.anchorPos, distances=distances[i],dimensional=dimensional)
             # print("result symbol: ", result)
             uwbResults.append(method.bestSolution)
         return uwbResults
@@ -94,6 +102,32 @@ class processor:
     def Position2D(self, pos, title):
         person = painter(pos)
         person.draw2D(title)
+
+    def Position2DTogether(self, pos1, pos2, title):
+        if len(pos1) != len(pos2):
+            print("len(pos1) != len(pos2)")
+            return
+
+        n = len(pos1)
+        f, ax = plt.subplots(2, 2)
+        f.suptitle(title)
+
+        ax[0][0].plot([i for i in range(n)], [pos1[i][0] for i in range(n)], c='r')
+        ax[0][0].plot([i for i in range(n)], [pos2[i][0] for i in range(n)], c='b')
+        # plt.ylim(-0.5, 1)
+        ax[0][0].set_title("X-axis")
+
+        ax[0][1].plot([i for i in range(n)], [pos1[i][1] for i in range(n)], c='r')
+        ax[0][1].plot([i for i in range(n)], [pos2[i][1] for i in range(n)], c='b')
+        # plt.ylim(-0.5, 1)
+        ax[0][1].set_title("Y-axis")
+
+        ax[1][0].plot([i for i in range(n)], [pos1[i][2] for i in range(n)], c='r')
+        ax[1][0].plot([i for i in range(n)], [pos2[i][2] for i in range(n)], c='b')
+        # plt.ylim(-0.5, 1)
+        # ax[1][0].set_title("Z-axis")
+
+        plt.show()
 
     def Position3D(self, pos, title, xlimInterval, ylimInterval, zlimInterval):
         person = painter(pos)

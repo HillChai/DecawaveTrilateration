@@ -1,6 +1,6 @@
 import numpy as np
 from math import sqrt
-
+from math import inf
 
 class twoDimensionalLocation:
 
@@ -14,6 +14,7 @@ class twoDimensionalLocation:
         self.r3 = distances[2]
         self.r4 = distances[3]
         self.bestSolution = np.zeros(3)
+        self.trilaterationSolution = np.zeros(3)
         self.result1, self.result2 = np.zeros(3), np.zeros(3)
         self.mu1, self.mu2 = 0.0, 0.0
         self.maxzero = 0.001
@@ -44,6 +45,7 @@ class twoDimensionalLocation:
             self.mu1 = 0
             self.mu2 = 0
             return -1
+            # return 1
 
         self.mu1 = (-b + sqrt(bb4ac)) / (2 * a)
         self.mu2 = (-b - sqrt(bb4ac)) / (2 * a)
@@ -128,8 +130,7 @@ class twoDimensionalLocation:
         else:
             z = 0.0
 
-        t2 = self.p1 + ex * x
-        t2 = t2 + ey * y
+        t2 = self.p1 + ex * x + ey * y
 
         self.result1 = t2 + ez * z
         self.result2 = t2 - ez * z
@@ -168,9 +169,9 @@ class twoDimensionalLocation:
         closer
         '''
         if i > h:
-            self.bestSolution = self.result1
+            self.trilaterationSolution = self.result1
             self.result1 = self.result2
-            self.result2 = self.bestSolution
+            self.result2 = self.trilaterationSolution
 
         cnt4 = 0
         rr4 = self.r4
@@ -183,7 +184,7 @@ class twoDimensionalLocation:
             cnt4 += 1
 
         if result:
-            self.bestSolution = self.result1  # 迭代最多10次后取最近的作为答案
+            self.trilaterationSolution = self.result1  # 迭代最多10次后取最近的作为答案
         else:
             if self.mu1 < 0 and self.mu2 < 0:
                 if abs(self.mu1) <= abs(self.mu2):
@@ -196,7 +197,7 @@ class twoDimensionalLocation:
                 ex = ex / h
                 mu = 0.5 * mu
                 t2 = ex * mu * h
-                self.bestSolution = t2
+                self.trilaterationSolution = t2
 
             elif self.mu1 < 0 and self.mu2 > 1 or self.mu2 < 0 and self.mu1 > 1:
                 if self.mu1 > self.mu2:
@@ -209,7 +210,7 @@ class twoDimensionalLocation:
                 t2 = ex * mu * h
                 t2 = t2 + self.result1
                 t3 = (self.result2 - t2) * 0.5
-                self.bestSolution = t2 + t3
+                self.trilaterationSolution = t2 + t3
 
             elif (self.mu1 > 0 and self.mu1 < 1) and (self.mu2 < 0 or self.mu2 > 1) or \
                     (self.mu2 > 0 and self.mu2 < 1) and (self.mu1 < 0 or self.mu1 > 1):
@@ -226,7 +227,7 @@ class twoDimensionalLocation:
                 ex /= h
                 t2 = ex * mu * h
                 t2 = self.result1 + t2
-                self.bestSolution = t2
+                self.trilaterationSolution = t2
 
             elif self.mu1 == self.mu2:
                 mu = self.mu1
@@ -240,9 +241,10 @@ class twoDimensionalLocation:
                     mu -= 0.5 * (1 - mu)
                 ex = self.result2 - self.result1
                 h = np.linalg.norm(ex)
+                ex /= h
                 t2 = ex * mu * h
                 t2 = self.result1 + t2
-                self.bestSolution = t2
+                self.trilaterationSolution = t2
 
             else:
                 '''
@@ -255,20 +257,19 @@ class twoDimensionalLocation:
                 mu = 0.5 * mu
                 t2 = ex * mu * h
                 t2 = self.result1 + t2
-                self.bestSolution = t2
-
+                self.trilaterationSolution = t2
         return 4
 
-    def gdoprate(self):
-        ex = self.p1 - self.bestSolution
+    def gdoprate(self, p1, p2, p3, p4, solution, xinterval= [-inf, inf], yinterval= [-inf, inf], zinterval = [-inf, inf]):
+        ex = p1 - solution
         h = np.linalg.norm(ex)
         t1 = ex / h
 
-        ex = self.p2 - self.bestSolution
+        ex = p2 - solution
         h = np.linalg.norm(ex)
         t2 = ex / h
 
-        ex = self.p3 - self.bestSolution
+        ex = p3 - solution
         h = np.linalg.norm(ex)
         t3 = ex / h
 
@@ -279,11 +280,23 @@ class twoDimensionalLocation:
         result = max(gdop1, gdop2, gdop3)
         return result
 
+        # R = [np.linalg.norm(p1 - solution), np.linalg.norm(p2 - solution),
+        #      np.linalg.norm(p3 - solution), np.linalg.norm(p4 - solution)]
+        # vecToAnc = [((p1 - solution)/R[0]).tolist(), ((p2 - solution)/R[1]).tolist(),
+        #             ((p3 - solution)/R[2]).tolist(), ((p4 - solution)/R[3]).tolist()]
+        # A = np.matrix([vecToAnc[i] for i in range(4)])
+        # np.insert(A, 2, [1,1,1,1], axis=1)
+        # Q = np.linalg.inv(np.matmul(A.T, A))
+        # result = sqrt(np.sum(np.diagonal(Q)))
+        # return result
+
+        # return 20
+
     def deca3DLocate(self):
         trilateration_errcounter = 0
         trilateration_mode34 = 0
         combination_counter = 4
-        gdoprate_compare2 = 1
+        gdoprate_compare2 = 20
 
         while combination_counter:
             success = 0
@@ -295,7 +308,6 @@ class twoDimensionalLocation:
             # CM_ERR_ADDED 5,10
             while not success and overlook_count <= 10 and not concentric:
                 result = self.trilateration()
-
                 if result == 3:
                     trilateration_mode34 = 3
                     success = 1
@@ -316,8 +328,15 @@ class twoDimensionalLocation:
                     self.nosolution_count = overlook_count
                     combination_counter = 0
                 elif result == 4:
-                    gdoprate_compare1 = self.gdoprate()
-                    if gdoprate_compare1 <= gdoprate_compare2:
+                    gdoprate_compare1 = self.gdoprate(gdoprate_compare2, self.p1, self.p2, self.p3,self.p4, self.trilaterationSolution)   # calculate by trilaterationSolution
+                    # gdoprate_compare1 = round(self.gdoprate(self.p1, self.p2, self.p3, self.p4, self.trilaterationSolution), 2)   # calculate by trilaterationSolution
+                    print("gdoprate_compare1, gdoprate_compare2:", gdoprate_compare1, gdoprate_compare2,self.trilaterationSolution)
+
+                    if gdoprate_compare1 < gdoprate_compare2:
+                        '''
+                        存比较后的值
+                        '''
+                        self.bestSolution = self.trilaterationSolution
                         self.nosolution_count = overlook_count
                         self.best_3derror = sqrt((np.linalg.norm(self.bestSolution - self.p1) - self.r1) ** 2 + \
                                             (np.linalg.norm(self.bestSolution - self.p2) - self.r2) ** 2 + \

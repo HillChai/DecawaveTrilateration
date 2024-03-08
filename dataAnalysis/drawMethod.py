@@ -29,6 +29,7 @@ class painter:
 
         plt.show()
 
+
     def draw3D(self, title, xlimInterval, ylimInterval, zlimInterval):
         ax4 = plt.subplot(projection="3d")
         ax4.set_title(title)

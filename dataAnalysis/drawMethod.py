@@ -30,16 +30,16 @@ class painter:
         plt.show()
 
 
-    def draw3D(self, title, xlimInterval, ylimInterval, zlimInterval):
+    def draw3D(self, title):
         ax4 = plt.subplot(projection="3d")
         ax4.set_title(title)
         ax4.scatter(self.x[:self.n//2], self.y[:self.n//2], self.z[:self.n//2], c='r')
         ax4.scatter(self.x[self.n // 2:], self.y[self.n // 2:], self.z[self.n // 2:], c='b')
         ax4.set_xlabel('X')
-        ax4.set_xlim(xlimInterval)
+        ax4.set_xlim([-0.5,2])
         ax4.set_ylabel('Y')
-        ax4.set_ylim(ylimInterval)
+        ax4.set_ylim([-0.5,2])
         ax4.set_zlabel('Z')
-        ax4.set_zlim(zlimInterval)
+        ax4.set_zlim([-0.5,2])
         plt.show()
 

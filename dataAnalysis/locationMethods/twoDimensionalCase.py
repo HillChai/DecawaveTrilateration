@@ -273,10 +273,15 @@ class twoDimensionalLocation:
         h = np.linalg.norm(ex)
         t3 = ex / h
 
+        ex = p4 - solution
+        h = np.linalg.norm(ex)
+        t4 = ex / h
+
         gdop1 = abs(np.dot(t1, t2))
         gdop2 = abs(np.dot(t2, t3))
         gdop3 = abs(np.dot(t3, t1))
-
+        # gdop4 = abs(np.dot(t4, t1))
+        # result = max(gdop1, gdop2, gdop3, gdop4)
         result = max(gdop1, gdop2, gdop3)
         return result
 
@@ -330,7 +335,7 @@ class twoDimensionalLocation:
                 elif result == 4:
                     gdoprate_compare1 = self.gdoprate(gdoprate_compare2, self.p1, self.p2, self.p3,self.p4, self.trilaterationSolution)   # calculate by trilaterationSolution
                     # gdoprate_compare1 = round(self.gdoprate(self.p1, self.p2, self.p3, self.p4, self.trilaterationSolution), 2)   # calculate by trilaterationSolution
-                    print("gdoprate_compare1, gdoprate_compare2:", gdoprate_compare1, gdoprate_compare2,self.trilaterationSolution)
+                    # print("gdoprate_compare1, gdoprate_compare2:", gdoprate_compare1, gdoprate_compare2,self.trilaterationSolution)
 
                     if gdoprate_compare1 < gdoprate_compare2:
                         '''

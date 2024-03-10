@@ -6,6 +6,17 @@ from locationMethods import generalLocation
 from drawMethod import painter
 import numpy as np
 
+import os
+from ctypes import *
+
+CUR_PATH = os.path.dirname(__file__)  # 获取当前运行脚本的绝对路径
+dllPath = os.path.join(CUR_PATH, "trilateration.dll")
+pDll = cdll.LoadLibrary(dllPath)
+class UWBMsg(Structure):
+    _fields_ = [("x", c_double),
+                ("y", c_double),
+                ("z", c_double)]
+
 class processor:
     def __init__(self, path, jsonName, anchorPos):
         self.anchorPos = anchorPos
@@ -24,7 +35,8 @@ class processor:
             self.n = len(self.data)
     def getPosition(self):
         for i in range(self.n):
-            self.position.append(self.data[i]["position"])
+            print(self.data[i]["position"])
+            self.position.append([(self.data[i]["position"][j] - self.data[0]["position"][j]) for j in range(3)])
 
     def geteulerAngle(self):
         for i in range(self.n):
@@ -62,6 +74,28 @@ class processor:
             distances.append(d)
         return distances
 
+    def trilaterationInDll(self, distances):
+        # def trilateration():
+
+        location = UWBMsg()
+        anchorArray = (UWBMsg * 8)()
+        distanceArray = (c_int * 8)(-1)
+
+        for i in range(4):
+            anchorArray[i].x = self.anchorPos[i][0]
+            anchorArray[i].y = self.anchorPos[i][1]
+            anchorArray[i].z = self.anchorPos[i][2]
+            distanceArray[i] = distances[i]
+
+        # 无效的测距值一定给 -1，否则会用随机数进行运算
+        distanceArray[4] = -1
+        distanceArray[5] = -1
+        distanceArray[6] = -1
+        distanceArray[7] = -1
+
+        result = pDll.GetLocation(byref(location), anchorArray, distanceArray)
+        return location.x, location.y, location.z
+
     def calculateOneByDecawave(self, distances, dimensional) -> list:
         method = generalLocation()
         result = method.GetLocation(anchorPos=self.anchorPos, distances=distances,dimensional=dimensional)
@@ -75,6 +109,8 @@ class processor:
         for i in range(self.n):
             result = method.GetLocation(anchorPos=self.anchorPos, distances=distances[i],dimensional=dimensional)
             # print("result symbol: ", result)
+            if method.bestSolution[0] < 0.001 and method.bestSolution[1] < 0.001 and method.bestSolution[2] < 0.001:
+                continue
             uwbResults.append(method.bestSolution)
         return uwbResults
 
@@ -129,9 +165,9 @@ class processor:
 
         plt.show()
 
-    def Position3D(self, pos, title, xlimInterval, ylimInterval, zlimInterval):
+    def Position3D(self, pos, title):
         person = painter(pos)
-        person.draw3D(title, xlimInterval, ylimInterval, zlimInterval)
+        person.draw3D(title)
 
     def draw4DistanceComparingGraphs(self, distances, unknowDistances):
         print(len(distances), len(unknowDistances))
